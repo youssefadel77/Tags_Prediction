@@ -76,8 +76,8 @@ for tags in y_train:
         tags_counts[tag] += 1
 
 #Described encoding in the function my_bag_of_words with the size of the dictionary equals to 5000. To find the most common words use train data.
-most_common_words = sorted(words_counts.items(), key=lambda x: x[1], reverse=True)[:8000]
-DICT_SIZE = 6000
+most_common_words = sorted(words_counts.items(), key=lambda x: x[1], reverse=True)[:6000]
+DICT_SIZE = 5000
 WORDS_TO_INDEX = {p[0]:i for i,p in enumerate(most_common_words[:DICT_SIZE])}
 INDEX_TO_WORDS = {WORDS_TO_INDEX[k]:k for k in WORDS_TO_INDEX}
 ALL_WORDS = WORDS_TO_INDEX.keys()
@@ -115,8 +115,8 @@ def tfidf_features(X_train, X_val, X_test):
         X_train, X_val, X_test — samples        
         return TF-IDF vectorized representation of each sample and vocabulary
     """
-    tfidf_vectorizer = TfidfVectorizer(min_df=5, max_df=0.9, ngram_range=(1, 2),
-                                       token_pattern='(\S+)')   
+    tfidf_vectorizer = TfidfVectorizer(minw_df=5, max_df=0.9, ngram_range=(1, 2),
+                                       token_pattern='(\S+)')  
     X_train=tfidf_vectorizer.fit_transform(X_train)
     X_val=tfidf_vectorizer.transform(X_val)
     X_test=tfidf_vectorizer.transform(X_test)
@@ -197,3 +197,112 @@ print('Bag-of-words')
 print_evaluation_scores(y_val, y_val_predicted_labels_mybag)
 print('Tfidf')
 print_evaluation_scores(y_val, y_val_predicted_labels_tfidf)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 24 04:51:06 2019
+
+@author: youss
+"""
+#import the packages
+import numpy  as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+#Import the dataset
+dataset = pd.read_csv('trainA.csv')
+
+#Cleaning the text
+import re 
+import nltk 
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+
+#for data X
+corpus = []
+for i in range(0,100000) :
+    review= re.sub('[^a-zA-Z#$]',' ',dataset['title'][i])
+    review=review.lower()
+    review=review.split()
+    ps=PorterStemmer()
+    review=[ps.stem(word) for word in review if not word in set(stopwords.words('english'))]
+    review=' '.join(review)
+    corpus.append(review)
+                 
+#create a bag of words model
+from sklearn.feature_extraction.text import CountVectorizer
+cv = CountVectorizer(max_features=5000)
+X = cv.fit_transform(corpus)
+
+
+
+#load the y-train
+y_train = dataset['tags'].values
+
+from collections import defaultdict
+# Dictionary of all tags from train corpus with their counts.
+tags_counts =  defaultdict(int)
+
+for tags in y_train:
+    for tag in tags:
+        tags_counts[tag] += 1
+               
+from sklearn.preprocessing import MultiLabelBinarizer
+mlb = MultiLabelBinarizer(classes=sorted(tags_counts.keys()))
+y_train = mlb.fit_transform(y_train)
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y_train, test_size = 0.20, random_state = 0)
+
+
+
+
+# Fitting Naive Bayes to the Training set
+from sklearn.svm import SVC
+clf = SVC()
+clf = clf.fit(X_train, y_train)
+# Predicting the Test set results
+y_pred = clf.predict(X_test)
+
+
+"""
+print(y[1][2])
+# Splitting the dataset into the Training set and Test set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
+
+# Fitting Naive Bayes to the Training set
+from sklearn.naive_bayes import MultinomialNB
+classifier = MultinomialNB()
+classifier.fit(X_train, y_train)
+
+# Predicting the Test set results
+y_pred = classifier.predict(X_test)
+
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)"""
